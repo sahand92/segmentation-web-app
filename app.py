@@ -1,14 +1,8 @@
 import io
-import string
 import torch
-import torch.nn as nn
-import torchvision.transforms as transforms
-from torchvision import models
 from flask import Flask, jsonify, request, render_template, send_file, url_for
 from PIL import Image
-import os
 import numpy as np
-import matplotlib.pyplot as plt
 import torch.nn.functional as F
 from model.unet_model import UNet
 from base64 import b64encode
@@ -20,7 +14,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 net = UNet(n_channels=3, n_classes=4)
 model_path = './trained_model/net_lentil_10082021_epoch71.pth'
 net.to(device=device)
-net.load_state_dict(torch.load(model_path), device)
+net.load_state_dict(torch.load(model_path, device))
 
 net.eval()
 
@@ -56,6 +50,15 @@ def predict_img(pil_img):
     full_mask = full_mask > 0.5
     return full_mask
 
+# count % pixels for each class
+def pixel_percentage(predicted_mask):
+    classes = predicted_mask.shape[2] if len(predicted_mask.shape) > 2 else 1
+    counts = np.zeros(classes)
+    for i in range(classes):
+        counts[i-1] = np.sum(predicted_mask[:, :, i-1])
+    counts = counts/(predicted_mask.shape[0]*predicted_mask.shape[1])*100
+    return counts
+
 # map mask channels to RGB colormap
 def labeloverlay(mask, colormap):
     mask_colored = np.zeros((np.shape(mask)[0], np.shape(mask)[1], 3), dtype=float)
@@ -80,6 +83,7 @@ def upload_file():
         bytes_img = file.read()
         pil_img = Image.open(io.BytesIO(bytes_img))
         full_mask = predict_img(pil_img)
+        predicted_mask = full_mask
         colormap = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1]])
         full_mask = labeloverlay(full_mask, colormap)
         full_mask = np.array(full_mask*255, dtype='uint8')
@@ -101,7 +105,7 @@ def upload_file():
 
         file_object.seek(0)
 
-        return render_template('result.html', image_path=img_data)
+        return render_template('result.html', image_path=img_data, name=pixel_percentage(predicted_mask))
         #return send_file(file_object, mimetype='image/PNG')
     return render_template('index.html')
 
