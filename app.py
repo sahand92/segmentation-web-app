@@ -13,7 +13,7 @@ app = Flask(__name__)
 with torch.no_grad():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     net = UNet(n_channels=3, n_classes=4)
-    model_path = './trained_model/net_lentil_10082021_epoch71.pth'
+    model_path = './trained_model/net_lentil_12082021_epoch150.pth'
     net.to(device=device)
     net.load_state_dict(torch.load(model_path, device))
     net.eval()
@@ -62,7 +62,7 @@ def crop_array(img_nd):
 # predict image mask
 def predict_img(pil_img):
     with torch.no_grad():
-        img_tensor = torch.from_numpy(preprocess_img(pil_img, 0.5))
+        img_tensor = torch.from_numpy(preprocess_img(pil_img, 1))
         img_tensor = img_tensor.unsqueeze(0)
         img_tensor = img_tensor.to(device=device, dtype=torch.float32)
         output = net(img_tensor)
@@ -111,7 +111,7 @@ def upload_file():
         full_mask = labeloverlay(full_mask, colormap)
         full_mask = np.array(full_mask*255, dtype='uint8')
         full_mask = Image.fromarray(full_mask)
-        pil_img = Image.fromarray(np.array(preprocess_og_img(pil_img, 0.5)*255, dtype='uint8'))
+        pil_img = Image.fromarray(np.array(preprocess_og_img(pil_img, 1)*255, dtype='uint8'))
         # overlay full_mask and pil_img
         overlayed_img = Image.blend(pil_img.convert('RGBA'), full_mask.convert('RGBA'), .7)
 
