@@ -37,10 +37,32 @@ def preprocess_img(pil_img, scale):
 
     return img_trans
 
+def preprocess_og_img(pil_img, scale):
+    w, h = pil_img.size
+    newW, newH = int(scale * w), int(scale * h)
+    assert newW > 0 and newH > 0, 'Scale is too small'
+    pil_img = pil_img.resize((newW, newH))
+
+    img_nd = np.array(pil_img)
+
+    if len(img_nd.shape) == 2:
+        img_nd = np.expand_dims(img_nd, axis=2)
+
+    # HWC to CHW
+    img_trans = img_nd
+    if img_trans.max() > 1:
+        img_trans = img_trans / 255
+
+    return img_trans
+
+# create array of cropped images (CHW)
+def crop_array(img_nd):
+    w, h = np.shape(img_nd)[1], np.shape(img_nd)[2]
+
 # predict image mask
 def predict_img(pil_img):
     with torch.no_grad():
-        img_tensor = torch.from_numpy(preprocess_img(pil_img, 1))
+        img_tensor = torch.from_numpy(preprocess_img(pil_img, 0.5))
         img_tensor = img_tensor.unsqueeze(0)
         img_tensor = img_tensor.to(device=device, dtype=torch.float32)
         output = net(img_tensor)
@@ -89,7 +111,7 @@ def upload_file():
         full_mask = labeloverlay(full_mask, colormap)
         full_mask = np.array(full_mask*255, dtype='uint8')
         full_mask = Image.fromarray(full_mask)
-
+        pil_img = Image.fromarray(np.array(preprocess_og_img(pil_img, 0.5)*255, dtype='uint8'))
         # overlay full_mask and pil_img
         overlayed_img = Image.blend(pil_img.convert('RGBA'), full_mask.convert('RGBA'), .7)
 
