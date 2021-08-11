@@ -6,10 +6,10 @@
 		<img src="{{ image_path }}" id="output-image"/>
 		<h1 class="h5 mb-3 font-weight-normal"
 			style="text-align: left; line-height: 1.5"> Image constituency by pixel %:<br>
-			{{ name[1]|round(1) }} %sound,<br>
-			{{ name[0]|round(1) }} %defective,<br>
-			{{ name[2]|round(1) }} %split,<br>
-			{{ name[3]|round(1) }} %foreign material
+			<div id="circle_green"></div> {{ name[1]|round(1) }}% sound,<br>
+			<div id="circle_red"></div> {{ name[0]|round(1) }}% defective,<br>
+			<div id="circle_yellow"></div> {{ name[2]|round(1) }}% split,<br>
+			<div id="circle_blue"></div> {{ name[3]|round(1) }}% foreign material
 			</h5>
 
 		<p class="mt-5 mb-3 text-muted">Powered by PyTorch, Flask, and Bootstrap.</p>

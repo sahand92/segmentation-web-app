@@ -39,3 +39,39 @@ body {
   max-width: 400px;
   padding-bottom: 10px;
 }
+
+#circle_green {
+    background: #32CD32;
+    text-align: left;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display:inline-flex;
+}
+
+#circle_red {
+    background: #FF0000;
+    text-align: left;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display:inline-flex;
+}
+
+#circle_yellow {
+    background: #fcdb03;
+    text-align: left;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display:inline-flex;
+}
+
+#circle_blue {
+    background: #0345fc;
+    text-align: left;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    display:inline-flex;
+}
