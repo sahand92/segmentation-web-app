@@ -10,14 +10,13 @@ from base64 import b64encode
 app = Flask(__name__)
 
 # import NN model here
-torch.no_grad()
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-net = UNet(n_channels=3, n_classes=4)
-model_path = './trained_model/net_lentil_10082021_epoch71.pth'
-net.to(device=device)
-net.load_state_dict(torch.load(model_path, device))
-
-net.eval()
+with torch.no_grad():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    net = UNet(n_channels=3, n_classes=4)
+    model_path = './trained_model/net_lentil_10082021_epoch71.pth'
+    net.to(device=device)
+    net.load_state_dict(torch.load(model_path, device))
+    net.eval()
 
 # define image input transformation
 def preprocess_img(pil_img, scale):
@@ -40,10 +39,11 @@ def preprocess_img(pil_img, scale):
 
 # predict image mask
 def predict_img(pil_img):
-    img_tensor = torch.from_numpy(preprocess_img(pil_img, 1))
-    img_tensor = img_tensor.unsqueeze(0)
-    img_tensor = img_tensor.to(device=device, dtype=torch.float32)
-    output = net(img_tensor)
+    with torch.no_grad():
+        img_tensor = torch.from_numpy(preprocess_img(pil_img, 1))
+        img_tensor = img_tensor.unsqueeze(0)
+        img_tensor = img_tensor.to(device=device, dtype=torch.float32)
+        output = net(img_tensor)
     probs = F.softmax(output, dim=1)
     probs = probs.squeeze(0)
     probs = probs.detach().cpu().numpy()
