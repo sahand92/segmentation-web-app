@@ -137,7 +137,7 @@ def upload_file():
         bytes_img = file.read()
         pil_img = Image.open(io.BytesIO(bytes_img))
         #full_mask = predict_img(pil_img)
-        tile_size = 250
+        tile_size = 200
         full_mask, counts = predict_tile(pil_img, tile_size)
         #predicted_mask = full_mask
         #colormap = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1]])
