@@ -55,10 +55,10 @@ def preprocess_og_img(pil_img, scale):
 
     return img_trans
 
-def crop_center(pil_img):
+def crop_center(pil_img, tile_size):
     w, h = pil_img.width, pil_img.height
-    new_w = w//160*160
-    new_h = h//160*160
+    new_w = w//tile_size*tile_size
+    new_h = h//tile_size*tile_size
     left = (w - new_w) // 2
     top = (h - new_h) // 2
     right = (w + new_w) // 2
@@ -68,7 +68,7 @@ def crop_center(pil_img):
 
 # create pil patches --> predict --> tile
 def predict_tile(pil_img, tile_size):
-    pil_img = crop_center(pil_img)
+    pil_img = crop_center(pil_img, tile_size)
     w, h = pil_img.width, pil_img.height
     full_mask = Image.new('RGB', (w, h))
     counts = np.zeros(4)
@@ -137,14 +137,15 @@ def upload_file():
         bytes_img = file.read()
         pil_img = Image.open(io.BytesIO(bytes_img))
         #full_mask = predict_img(pil_img)
-        full_mask, counts = predict_tile(pil_img, 160)
+        tile_size = 250
+        full_mask, counts = predict_tile(pil_img, tile_size)
         #predicted_mask = full_mask
         #colormap = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1]])
         #full_mask = labeloverlay(full_mask, colormap)
         #full_mask = np.array(full_mask*255, dtype='uint8')
         #full_mask = Image.fromarray(full_mask)
         pil_img = Image.fromarray(np.array(preprocess_og_img(pil_img, 1)*255, dtype='uint8'))
-        pil_img = crop_center(pil_img)
+        pil_img = crop_center(pil_img, tile_size)
         # overlay full_mask and pil_img
         overlayed_img = Image.blend(pil_img.convert('RGBA'), full_mask.convert('RGBA'), .7)
 
