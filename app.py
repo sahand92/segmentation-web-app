@@ -55,9 +55,40 @@ def preprocess_og_img(pil_img, scale):
 
     return img_trans
 
-# create array of cropped images (CHW)
-def crop_array(img_nd):
-    w, h = np.shape(img_nd)[1], np.shape(img_nd)[2]
+def crop_center(pil_img):
+    w, h = pil_img.width, pil_img.height
+    new_w = w//160*160
+    new_h = h//160*160
+    left = (w - new_w) // 2
+    top = (h - new_h) // 2
+    right = (w + new_w) // 2
+    bottom = (h + new_h) // 2
+    center_cropped = pil_img.crop((left, top, right, bottom))
+    return center_cropped
+
+# create pil patches --> predict --> tile
+def predict_tile(pil_img, tile_size):
+    pil_img = crop_center(pil_img)
+    w, h = pil_img.width, pil_img.height
+    full_mask = Image.new('RGB', (w, h))
+    counts = np.zeros(4)
+    for i in range(0, h, tile_size):
+        for j in range(0, w, tile_size):
+            box = (j, i, j+tile_size, i+tile_size)
+            cropped = pil_img.crop(box)
+            # predict cropped
+            cropped_mask = predict_img(cropped)
+            counts_crop = pixel_percentage(cropped_mask)
+            counts += counts_crop
+            colormap = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1]])
+            cropped_mask = labeloverlay(cropped_mask, colormap)
+            cropped_mask = np.array(cropped_mask * 255, dtype='uint8')
+            cropped_mask = Image.fromarray(cropped_mask)
+
+            full_mask.paste(cropped_mask, (j, i))
+    number_of_tiles = (w//tile_size)*(h//tile_size)
+    counts = counts/number_of_tiles
+    return full_mask, counts
 
 # predict image mask
 def predict_img(pil_img):
@@ -105,13 +136,15 @@ def upload_file():
             return
         bytes_img = file.read()
         pil_img = Image.open(io.BytesIO(bytes_img))
-        full_mask = predict_img(pil_img)
-        predicted_mask = full_mask
-        colormap = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1]])
-        full_mask = labeloverlay(full_mask, colormap)
-        full_mask = np.array(full_mask*255, dtype='uint8')
-        full_mask = Image.fromarray(full_mask)
+        #full_mask = predict_img(pil_img)
+        full_mask, counts = predict_tile(pil_img, 160)
+        #predicted_mask = full_mask
+        #colormap = np.array([[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1]])
+        #full_mask = labeloverlay(full_mask, colormap)
+        #full_mask = np.array(full_mask*255, dtype='uint8')
+        #full_mask = Image.fromarray(full_mask)
         pil_img = Image.fromarray(np.array(preprocess_og_img(pil_img, 1)*255, dtype='uint8'))
+        pil_img = crop_center(pil_img)
         # overlay full_mask and pil_img
         overlayed_img = Image.blend(pil_img.convert('RGBA'), full_mask.convert('RGBA'), .7)
 
@@ -128,7 +161,8 @@ def upload_file():
 
         file_object.seek(0)
 
-        return render_template('result.html', image_path=img_data, name=pixel_percentage(predicted_mask))
+        #return render_template('result.html', image_path=img_data, name=pixel_percentage(predicted_mask))
+        return render_template('result.html', image_path=img_data, name=counts)
         #return send_file(file_object, mimetype='image/PNG')
     return render_template('index.html')
 
